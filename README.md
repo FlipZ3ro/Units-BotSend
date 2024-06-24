@@ -6,7 +6,7 @@
 ```
 git clone https://github.com/FlipZ3ro/Units-BotSend.git
 
-pip install web3 eth_account requests python-dotenv
+pip install web3 eth_account requests python-dotenv colorama
 
 python main.py
 ```
