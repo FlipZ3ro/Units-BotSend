@@ -1,13 +1,15 @@
 import os
 from web3 import Web3
 from dotenv import load_dotenv
+from colorama import init, Fore, Style
 import random
+import time  # Import time module for delay
 
 # Print header
-print("+-----------------------------------------+")
-print("            Units Network Testnet")
-print("          Modif from HappyCuanAirdrop")
-print("+-----------------------------------------+")
+print(Fore.GREEN + "+-----------------------------------------+")
+print(Fore.GREEN + "            Units Network Testnet")
+print(Fore.GREEN + "          Modif from HappyCuanAirdrop")
+print(Fore.GREEN + "+-----------------------------------------+")
 
 def send_ether(w3, private_key, recipients):
     # Disable automatic gas price checking
@@ -50,8 +52,10 @@ def send_ether(w3, private_key, recipients):
     # Verify if the sender has enough balance for the total transaction cost
     sender_balance = w3.eth.get_balance(sender_address)
     total_cost = total_gas * gas_price + sum(w3.to_wei(amount, 'ether') for amount in recipients.values())
+    print(Fore.CYAN + f"Sender balance: {Web3.from_wei(sender_balance, 'ether')} ETH")
+    print(Fore.CYAN + f"Total cost: {Web3.from_wei(total_cost, 'ether')} ETH")
     if sender_balance < total_cost:
-        raise ValueError("Insufficient balance for transactions and gas fees.")
+        raise ValueError(Fore.RED + "Insufficient balance for transactions and gas fees.")
 
     # Sign and send transactions
     signed_txs = []
@@ -60,15 +64,28 @@ def send_ether(w3, private_key, recipients):
         signed_txs.append((tx_sequence, signed_tx))
 
     for tx_sequence, signed_tx in signed_txs:
-        try:
-            tx_hash = w3.eth.send_raw_transaction(signed_tx.rawTransaction)
-            print(f"Transaction {tx_sequence} successfully sent. Transaction hash: {tx_hash.hex()}")
-        except ValueError as e:
-            if "known transaction" in str(e).lower():
-                print(f"Transaction {tx_sequence} is already known. Skipping...")
-            else:
-                raise e
-                
+        while True:
+            try:
+                tx_hash = w3.eth.send_raw_transaction(signed_tx.rawTransaction)
+                print(Fore.GREEN + f"Transaction {tx_sequence} successfully sent. Transaction hash: {tx_hash.hex()}")
+                break
+            except ValueError as e:
+                if "nonce too low" in str(e).lower():
+                    print(Fore.YELLOW + f"Nonce too low for transaction {tx_sequence}. Incrementing nonce and retrying...")
+                    tx['nonce'] = w3.eth.get_transaction_count(sender_address)
+                    signed_tx = w3.eth.account.sign_transaction(tx, private_key)
+                elif "known transaction" in str(e).lower():
+                    print(Fore.YELLOW + f"Transaction {tx_sequence} is already known. Skipping...")
+                    break  # Skip to the next transaction
+                elif "replacement transaction underpriced" in str(e).lower():
+                    print(Fore.YELLOW + f"Transaction {tx_sequence} underpriced. Retrying with higher gas price...")
+                    tx['gasPrice'] = gas_price * 2  # Double the gas price
+                    signed_tx = w3.eth.account.sign_transaction(tx, private_key)
+                else:
+                    print(Fore.RED + f"Error sending transaction {tx_sequence}: {e}")
+                    raise e
+                time.sleep(5)  # Wait for a few seconds before retrying
+
 # Load environment variables from .env file
 load_dotenv()
 
@@ -88,7 +105,7 @@ recipients = {}
 for i in range(num_transactions):
     new_account = w3.eth.account.create()
     recipient_address = new_account.address
-    amount = round(random.uniform(0.00001, 0.0001), 8)  # Random amount between 0.00001 and 0.0001 Ether
+    amount = round(random.uniform(0.00000001, 0.00000001), 8)  # Random amount between 0.00001 and 0.0001 Ether
     recipients[recipient_address] = amount
 
 # Loop through private keys and send transactions
