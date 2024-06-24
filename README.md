@@ -1,4 +1,4 @@
-# MultisendV2
+# Units-BotSend-Python
 
 ### Installation
 ```
