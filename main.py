@@ -19,7 +19,7 @@ def send_ether(w3, private_key, recipients):
     gas_price = w3.to_wei('0.00111177', 'gwei')
 
     # Define the gas limit for a simple Ether transfer
-    gas_limit = 21000
+    gas_limit = 60000
 
     # Get the sender's address from private key
     sender_address = w3.eth.account.from_key(private_key).address
