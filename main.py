@@ -2,6 +2,7 @@ import os
 import random
 from web3 import Web3
 from dotenv import load_dotenv
+<<<<<<< HEAD
 
 def check_balance(w3, address):
     balance = w3.eth.get_balance(address)
@@ -76,6 +77,10 @@ def send_ether(w3, sender_address, private_key, recipients):
         # Print current balance after each transaction
         current_balance = check_balance(w3, sender_address)
         print(f"Current Balance: {current_balance} ETH\n")
+=======
+from interaction import send_ether
+import random
+>>>>>>> 4ff383607c26782d24b02ca3c345661052a24726
 
 # Print header
 print("+-----------------------------------------+")
