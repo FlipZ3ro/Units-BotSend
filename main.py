@@ -1,9 +1,15 @@
 import os
-import random
 from web3 import Web3
 from dotenv import load_dotenv
+import random
 
-def send_ether(w3, sender_address, private_key, recipients):
+# Print header
+print("+-----------------------------------------+")
+print("            Units Network Testnet")
+print("          Modif from HappyCuanAirdrop")
+print("+-----------------------------------------+")
+
+def send_ether(w3, private_key, recipients):
     # Disable automatic gas price checking
     w3.middleware_onion.clear()
 
@@ -13,8 +19,10 @@ def send_ether(w3, sender_address, private_key, recipients):
     # Define the gas limit for a simple Ether transfer
     gas_limit = 21000
 
+    # Get the sender's address from private key
+    sender_address = w3.eth.account.from_key(private_key).address
+
     # Get the sender's nonce
-    w3.eth.default_account = Web3.to_checksum_address(sender_address)
     nonce = w3.eth.get_transaction_count(sender_address)
 
     # Initialize total gas needed
@@ -52,40 +60,20 @@ def send_ether(w3, sender_address, private_key, recipients):
         signed_txs.append((tx_sequence, signed_tx))
 
     for tx_sequence, signed_tx in signed_txs:
-        tx_hash = w3.eth.send_raw_transaction(signed_tx.rawTransaction)
-        print(f"Transaction {tx_sequence + 1}:")
-        print(f"  Hash: {tx_hash.hex()}")
-        print(f"  From: {sender_address}")
-        print(f"  To: {list(recipients.keys())[tx_sequence]}")  # Changed recipients.keys() to list(recipients.keys())
-        print(f"  Amount: {list(recipients.values())[tx_sequence]} ETH")
-        print(f"  Gas Price: {w3.from_wei(gas_price, 'gwei')} Gwei")
-
         try:
-            # Check transaction receipt and status
-            receipt = w3.eth.wait_for_transaction_receipt(tx_hash)
-            if receipt and 'status' in receipt and receipt['status'] == 1:
-                print(f"Transaction Success!")
-                print(f"  Block Number: {receipt['blockNumber']}")
-                print(f"  Gas Used: {receipt['gasUsed']}")
-            else:
-                print(f"Transaction Failed!")
+            tx_hash = w3.eth.send_raw_transaction(signed_tx.rawTransaction)
+            print(f"Transaction {tx_sequence} successfully sent. Transaction hash: {tx_hash.hex()}")
         except ValueError as e:
-            print(f"Error occurred: {str(e)}")
-
-        # Print a new line for separation
-        print()
-
-# Print header
-print("+-----------------------------------------+")
-print("            Units Network Testnet")
-print("          Modif from HappyCuanAirdrop")
-print("+-----------------------------------------+")
-
+            if "known transaction" in str(e).lower():
+                print(f"Transaction {tx_sequence} is already known. Skipping...")
+            else:
+                raise e
+                
 # Load environment variables from .env file
 load_dotenv()
 
 # Initialize Web3 and other configurations
-rpc_url = "https://rpc-testnet.unit0.dev"  # Replace with your RPC URL
+rpc_url = os.getenv("RPC_URL")  # Ensure this matches your RPC server address
 w3 = Web3(Web3.HTTPProvider(rpc_url))
 
 # Load private keys from .env file
@@ -100,16 +88,9 @@ recipients = {}
 for i in range(num_transactions):
     new_account = w3.eth.account.create()
     recipient_address = new_account.address
-    amount = round(random.uniform(0.00000001, 0.00000001), 8)  # Random amount between 0.00001 and 0.0001 Ether
+    amount = round(random.uniform(0.00001, 0.0001), 8)  # Random amount between 0.00001 and 0.0001 Ether
     recipients[recipient_address] = amount
 
-# Call the send_ether function for each private key
+# Loop through private keys and send transactions
 for private_key in private_keys:
-    sender_address = w3.eth.account.from_key(private_key).address
-    print(f"Sending transactions from address: {sender_address}")
-
-    # Send Ether
-    send_ether(w3, sender_address, private_key, recipients)
-
-    # Print a new line for separation
-    print()
+    send_ether(w3, private_key, recipients)
