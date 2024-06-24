@@ -4,7 +4,7 @@
 `add YourPrivateKeys in file .env`
 
 ```
-https://github.com/FlipZ3ro/Units-BotSend.git
+git clone https://github.com/FlipZ3ro/Units-BotSend.git
 
 pip install web3 eth_account requests python-dotenv
 
