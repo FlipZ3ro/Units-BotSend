@@ -2,24 +2,19 @@ import os
 import random
 from web3 import Web3
 from dotenv import load_dotenv
-<<<<<<< HEAD
-
-def check_balance(w3, address):
-    balance = w3.eth.get_balance(address)
-    return w3.fromWei(balance, 'ether')
 
 def send_ether(w3, sender_address, private_key, recipients):
     # Disable automatic gas price checking
     w3.middleware_onion.clear()
 
     # Define a gas price (e.g., 50 Gwei)
-    gas_price = w3.toWei('0.00111177', 'gwei')
+    gas_price = w3.to_wei('0.00111177', 'gwei')
 
     # Define the gas limit for a simple Ether transfer
     gas_limit = 21000
 
     # Get the sender's nonce
-    w3.eth.default_account = Web3.toChecksumAddress(sender_address)
+    w3.eth.default_account = Web3.to_checksum_address(sender_address)
     nonce = w3.eth.get_transaction_count(sender_address)
 
     # Initialize total gas needed
@@ -29,8 +24,8 @@ def send_ether(w3, sender_address, private_key, recipients):
     txs = []
     tx_sequence_number = 0
     for recipient_address, amount in recipients.items():
-        recipient_address_checksum = Web3.toChecksumAddress(recipient_address)
-        amount_in_wei = w3.toWei(amount, 'ether')
+        recipient_address_checksum = Web3.to_checksum_address(recipient_address)
+        amount_in_wei = w3.to_wei(amount, 'ether')
         tx = {
             'to': recipient_address_checksum,
             'value': amount_in_wei,
@@ -46,7 +41,7 @@ def send_ether(w3, sender_address, private_key, recipients):
 
     # Verify if the sender has enough balance for the total transaction cost
     sender_balance = w3.eth.get_balance(sender_address)
-    total_cost = total_gas * gas_price + sum(w3.toWei(amount, 'ether') for amount in recipients.values())
+    total_cost = total_gas * gas_price + sum(w3.to_wei(amount, 'ether') for amount in recipients.values())
     if sender_balance < total_cost:
         raise ValueError("Insufficient balance for transactions and gas fees.")
 
@@ -63,24 +58,22 @@ def send_ether(w3, sender_address, private_key, recipients):
         print(f"  From: {sender_address}")
         print(f"  To: {list(recipients.keys())[tx_sequence]}")  # Changed recipients.keys() to list(recipients.keys())
         print(f"  Amount: {list(recipients.values())[tx_sequence]} ETH")
-        print(f"  Gas Price: {w3.fromWei(gas_price, 'gwei')} Gwei")
+        print(f"  Gas Price: {w3.from_wei(gas_price, 'gwei')} Gwei")
 
-        # Check transaction receipt and status
-        receipt = w3.eth.wait_for_transaction_receipt(tx_hash)
-        if receipt.status == 1:
-            print(f"Transaction Success!")
-            print(f"  Block Number: {receipt.blockNumber}")
-            print(f"  Gas Used: {receipt.gasUsed}")
-        else:
-            print(f"Transaction Failed!")
+        try:
+            # Check transaction receipt and status
+            receipt = w3.eth.wait_for_transaction_receipt(tx_hash)
+            if receipt and 'status' in receipt and receipt['status'] == 1:
+                print(f"Transaction Success!")
+                print(f"  Block Number: {receipt['blockNumber']}")
+                print(f"  Gas Used: {receipt['gasUsed']}")
+            else:
+                print(f"Transaction Failed!")
+        except ValueError as e:
+            print(f"Error occurred: {str(e)}")
 
-        # Print current balance after each transaction
-        current_balance = check_balance(w3, sender_address)
-        print(f"Current Balance: {current_balance} ETH\n")
-=======
-from interaction import send_ether
-import random
->>>>>>> 4ff383607c26782d24b02ca3c345661052a24726
+        # Print a new line for separation
+        print()
 
 # Print header
 print("+-----------------------------------------+")
@@ -109,23 +102,14 @@ for i in range(num_transactions):
     recipient_address = new_account.address
     amount = round(random.uniform(0.00000001, 0.00000001), 8)  # Random amount between 0.00001 and 0.0001 Ether
     recipients[recipient_address] = amount
-    print(f"Generated address {i+1}: {recipient_address}")
 
 # Call the send_ether function for each private key
 for private_key in private_keys:
     sender_address = w3.eth.account.from_key(private_key).address
     print(f"Sending transactions from address: {sender_address}")
 
-    # Check sender's balance before sending
-    initial_balance = check_balance(w3, sender_address)
-    print(f"Initial Balance: {initial_balance} ETH")
-
     # Send Ether
     send_ether(w3, sender_address, private_key, recipients)
-
-    # Check sender's balance after sending
-    final_balance = check_balance(w3, sender_address)
-    print(f"Final Balance: {final_balance} ETH")
 
     # Print a new line for separation
     print()
