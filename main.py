@@ -1,7 +1,7 @@
 import os
 from web3 import Web3
 from dotenv import load_dotenv
-from contract_interaction import send_ether
+from interaction import send_ether
 import random
 
 # Print header
